@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Mans Mobile Championship Esports - Official Site</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Futura:wght@700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Base Colors
+                        'dark-primary': '#111827',     // Deep Slate (Dark Background)
+                        'white-primary': '#F9FAFB',    // Off-White (Light Background)
+
+                        // Card Colors
+                        'dark-card': '#1F2937',        // Card Background on Dark
+                        'light-card': '#FFFFFF',       // Card Background on Light
+
+                        // Text Colors
+                        'text-dark': '#111827',        // Text over light background
+                        'text-light': '#E5E7EB',       // Text over dark background
+
+                        // Accents
+                        'neon-cyan': '#00FFFF',         // Secondary Highlight
+                        'fia-red': '#E4002B',          // Primary Accent Red
+
+                        // --- LICENSE COLORS (Will be applied dynamically from API) ---
+                        'license-gold': '#FFD700',      // Gold
+                        'license-silver': '#BFC1C2',    // Silver
+                        'license-platinum': '#E5E4E2',  // Platinum (Light Gray)
+                        'license-bronze': '#CD7F32',    // Bronze
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        'futura-like': ['Futura', '"Century Gothic"', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Ensures menu transitions are smooth */
+        .hidden-menu {
+            opacity: 0;
+            transform: translateX(100%);
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .show-menu {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        /* Gradient border for the Hero section */
+        .hero-border-light {
+            /* Replaced with a more subtle border for a cleaner look on dark theme */
+            border-bottom: 1px solid #1F2937; /* dark-card color */
+        }
+
+        /* Modal specific styling */
+        .login-modal-overlay {
+            z-index: 60;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .login-modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Utility for content switching */
+        .content-view {
+            display: none;
+        }
+        .content-view.active {
+            display: block;
+        }
+
+        /* Dashboard specific styling for cards */
+        .dashboard-card {
+            background-color: #1F2937 !important; /* dark-card, using !important to override Tailwind */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; /* p-6 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+            border-top: 4px solid #00FFFF; /* border-neon-cyan */
+        }
+
+        /* Utility for data loading */
+        .data-panel-inactive {
+            display: none;
+        }
+
+        /* Keyframes for the card loading animation */
+        @keyframes card-load-animation {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-card-load {
+            animation: card-load-animation 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-white-primary min-h-screen font-sans text-text-dark">
+
+    <header id="driver-header" class="sticky top-0 z-50 bg-dark-primary shadow-lg hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <button id="dashboard-home-button" class="p-2 rounded-full hover:bg-dark-card transition duration-300" title="Go to Homepage">
+                <svg class="w-6 h-6 text-text-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </button>
+
+            <div class="flex items-center space-x-4">
+                <span id="current-driver-display" class="text-text-light/80 text-sm font-medium">Welcome, Driver!</span>
+
+                <!-- Message/Notification Dropdown -->
+                <div class="relative">
+                    <button id="message-button" class="p-2 rounded-full hover:bg-dark-card transition duration-300 relative" title="Notifications">
+                        <svg class="w-6 h-6 text-text-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span id="notification-dot" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-fia-red rounded-full border-2 border-dark-primary"></span>
+                    </button>
+                    <div id="message-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-dark-card rounded-md shadow-lg z-50 p-4">
+                        <p class="text-sm font-bold text-text-light mb-2">Team Invitations</p>
+                        <div id="team-invite-placeholder" class="text-center text-xs text-text-light/60 italic">No new invitations.</div>
+                        <!-- Invites will be populated here -->
+                    </div>
+                </div>
+
+                <button id="logout-button" class="bg-fia-red text-white font-bold py-1 px-3 rounded-md shadow-md shadow-fia-red/50 hover:bg-red-700 transition duration-300 uppercase tracking-wider text-xs">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+
+    <div id="mobile-menu" class="hidden-menu fixed inset-0 bg-dark-card z-50 md:hidden p-8 text-text-light">
+        <div class="flex justify-end">
+            <button class="close-nav text-text-light focus:outline-none p-2 rounded-md hover:bg-dark-primary transition duration-150">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="mt-10 flex flex-col space-y-8 text-2xl font-futura-like text-center">
+            <a href="#series-info" class="nav-link-mobile text-text-light hover:text-fia-red transition duration-200 font-bold" data-target="public-homepage">CHAMPIONSHIPS</a>
+            <a href="#technical-rules" class="nav-link-mobile text-text-light hover:text-fia-red transition duration-200 font-bold" data-target="public-homepage">TECHNICAL</a>
+            <a href="#standings-page" class="nav-link-mobile text-text-light hover:text-fia-red transition duration-200 font-bold" data-target="standings-page">STANDINGS</a>
+            <a href="#strategy-guide" class="nav-link-mobile text-text-light hover:text-fia-red transition duration-200 font-bold" data-target="public-homepage">STRATEGY</a>
+            <div class="h-px w-3/4 mx-auto bg-text-light/30"></div>
+        </div>
+    </div>
+
+
+    <div id="content-container" class="min-h-screen">
+
+        <div id="public-homepage" class="content-view active">
+
+            <header id="public-header" class="sticky top-0 z-50 bg-white-primary shadow-lg border-b border-text-dark/10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+
+                    <div class="flex-shrink-0 bg-dark-primary text-text-light rounded-r-lg px-4 py-2 -ml-4 sm:-ml-6 lg:-ml-8 shadow-xl shadow-dark-primary/50 z-10">
+                        <img
+                            src="https://i.ibb.co/vCmgh5Kv/LEM-Profile.png"
+                            alt="LEM Esports Official Logo"
+                            class="h-10 w-auto"
+                        >
+                    </div>
+
+                    <!-- Wrapper for all right-side header content -->
+                    <div class="flex items-center space-x-4">
+                        <nav class="hidden md:flex flex-row items-center text-sm">
+                            <div class="flex items-center">
+                                <!-- Search Bar -->
+                                <div class="relative mr-4">
+                                    <input type="text" id="header-search" placeholder="Search..." class="bg-white-primary border-2 border-text-dark/20 rounded-full py-1.5 pl-4 pr-10 w-48 focus:w-64 transition-all duration-300 focus:border-fia-red focus:ring-0 text-sm">
+                                    <button id="header-search-button" class="absolute inset-y-0 right-0 flex items-center pr-3 text-text-dark/50 hover:text-fia-red">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </button>
+                                </div>
+                                <a href="#official-news" class="nav-link text-text-dark hover:text-fia-red transition duration-300 px-3 py-1 font-bold uppercase tracking-wide">News</a>
+                                <div class="h-5 w-px bg-text-dark/30 mx-2"></div>
+                                <a href="#standings-page" class="nav-link text-text-dark hover:text-fia-red transition duration-300 px-3 py-1 font-bold uppercase tracking-wide" data-target="standings-page">Standings</a>
+                            </div>
+                        </nav>
+
+                        <div class="flex items-center space-x-2">
+                            <!-- Profile Icon Button (Visible on all screen sizes now) -->
+                            <div class="relative">
+                                <!-- Logged Out State: Icon Button -->
+                                <button id="profile-button-logged-out" class="flex items-center justify-center w-10 h-10 bg-dark-card rounded-md border-2 border-white-primary shadow-md hover:bg-dark-primary transition duration-300">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                </button>
+
+                                <!-- Logged In State: Name & License Display -->
+                                <button id="profile-button-logged-in" class="hidden items-center space-x-2 bg-dark-card text-text-light px-3 py-1.5 rounded-full border-2 border-white-primary shadow-md hover:bg-dark-primary transition duration-300">
+                                    <span id="header-driver-name" class="text-xs font-bold uppercase">Driver Name</span>
+                                    <span id="header-license-badge" class="px-2 py-0.5 text-xs font-black rounded-md bg-license-bronze text-white">BRONZE</span>
+                                </button>
+
+                                <!-- Profile Dropdown -->
+                                <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-dark-card rounded-md shadow-lg py-1 z-50">
+                                    <!-- Logged Out State -->
+                                    <div id="logged-out-dropdown" data-modal-open>
+                                        <a href="#" data-modal-target="login-modal" class="block px-4 py-2 text-sm text-text-light hover:bg-dark-primary">Login</a>
+                                        <a href="#" data-modal-target="signup-modal" class="block px-4 py-2 text-sm text-text-light hover:bg-dark-primary">Sign Up</a>
+                                    </div>
+                                    <!-- Logged In State -->
+                                    <div id="logged-in-dropdown" class="hidden">
+                                        <a href="#" id="dropdown-dashboard-button" class="block px-4 py-2 text-sm text-text-light hover:bg-dark-primary" data-target="driver-dashboard">Dashboard</a>
+                                        <div class="px-4 py-2 text-sm text-text-light/70">
+                                            <p>Logged in as</p>
+                                            <p id="dropdown-driver-id" class="font-bold text-text-light truncate"></p>
+                                        </div>
+                                        <div class="border-t border-dark-primary"></div>
+                                        <a href="#" id="profile-logout-button" class="block w-full text-left px-4 py-2 text-sm text-fia-red hover:bg-dark-primary">Logout</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Mobile Menu Button -->
+                            <button class="open-nav md:hidden text-text-dark focus:outline-none p-2 rounded-md hover:bg-text-dark/10 transition duration-150">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="shadow-xl hero-border-light">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-36 text-center">
+                    <p class="text-sm font-futura-like uppercase tracking-[0.3em] text-fia-red mb-4">The Pinnacle of Digital Endurance Racing</p>
+                    <h1 class="text-5xl md:text-7xl font-futura-like font-black uppercase tracking-tight md:leading-snug">
+                        Le Mans Mobile <span class="text-neon-cyan">Championship</span> Esports
+                    </h1>
+                    <p class="mt-4 text-text-dark/80 text-xl md:text-2xl font-semibold">The Official Home of Endurance Motorsport Esports.</p>
+                    <div class="mt-12 space-y-4 sm:space-y-0 sm:space-x-6">
+                        <a href="#series-info" class="inline-block bg-fia-red text-white font-bold py-3 px-8 rounded-md shadow-lg shadow-fia-red/50 hover:bg-red-700 transition duration-300 transform hover:scale-[1.05] text-lg uppercase tracking-wider">
+                            View 2025 Calendar
+                        </a>
+                    </div>
+                </div>
+            </main>
+
+            <section id="series-info" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <h2 class="text-4xl font-futura-like font-black text-fia-red mb-12 uppercase tracking-tight text-center">Championships & Official News</h2>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div id="official-news" class="bg-light-card p-6 rounded-xl shadow-2xl border-t-4 border-text-dark/70 text-text-dark/90 transition duration-300 hover:shadow-text-dark/20 md:col-span-1">
+                        <h3 class="text-2xl font-bold text-fia-red mb-3">Official Bulletins</h3>
+                        <p class="mb-4 text-text-dark/80">Stay current with the latest announcements, results, and critical updates regarding BoP changes and driver license reviews.</p>
+
+                        <ul class="space-y-2 text-sm text-text-dark/70">
+                            <li class="flex items-center text-neon-cyan font-bold"><span class="text-fia-red mr-2">&bull;</span> NEW: Project Racer Has been confirmed to be amongst many unique games suitable for the LEM championships.</li>
+                            <li class="flex items-center"><span class="text-fia-red mr-2">&bull;</span> Project Racer Beta release Confirmed</li>
+                            <li class="flex items-center"><span class="text-fia-red mr-2">&bull;</span> LEM: Website Is in developement.</li>
+                        </ul>
+
+                        <a href="#" class="inline-flex items-center text-fia-red hover:text-text-dark transition duration-300 font-medium mt-6">
+                            Read All News
+                            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    </div>
+
+                    <div id="global-series" class="bg-light-card p-6 rounded-xl shadow-2xl border-t-4 border-fia-red text-text-dark/90 transition duration-300 hover:shadow-fia-red/20 md:col-span-2">
+                        <h3 class="text-2xl font-bold text-fia-red mb-3">Featured Endurance Series</h3>
+                        <p class="mb-4 text-text-dark/80">Compete in the world's most prestigious digital endurance races. These multi-class events require Gold or Platinum licenses and demand mastery of strategy and team coordination. Note: Championship availability depends on your drivers license in the Driver Portal.</p>
+
+                        <div class="grid sm:grid-cols-3 gap-4 text-center mt-6 pt-4 border-t border-text-dark/10">
+                            <div class="p-3 bg-white-primary/50 rounded-lg">
+                                <p class="text-xl font-bold text-fia-red">WEC</p>
+                                <p class="text-xs text-text-dark/70">World Endurance Championship</p>
+                            </div>
+                            <div class="p-3 bg-white-primary/50 rounded-lg">
+                                <p class="text-xl font-bold text-text-dark">ELMS</p>
+                                <p class="text-xs text-text-dark/70">European Le Mans Cup</p>
+                            </div>
+                            <div class="p-3 bg-white-primary/50 rounded-lg">
+                                <p class="text-xl font-bold text-fia-red">IMSA</p>
+                                <p class="text-xs text-text-dark/70">Endurance Cup</p>
+                            </div>
+                        </div>
+
+                        <a href="#" class="inline-flex items-center text-text-dark hover:text-fia-red transition duration-300 font-medium mt-6">
+                            View Full Calendar & Rulebook
+                            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    </div>
+
+
+                </div>
+            </section>
+
+            <div class="bg-dark-primary text-text-light">
+
+                <section id="technical-rules" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-4xl font-futura-like font-black text-neon-cyan mb-12 uppercase tracking-tight text-center">Technical & Car Registry</h2>
+
+                    <div id="car-registry" class="bg-dark-card p-8 rounded-xl shadow-2xl border-t-4 border-neon-cyan/70 text-white-primary">
+                        <div class="grid md:grid-cols-2 gap-10 items-start">
+                            <div>
+                                <h3 class="text-3xl font-bold text-fia-red mb-3">Master Car Registry Highlights</h3>
+                                <p class="text-white-primary/90 mb-6">The definitive list of approved vehicles, categorized by class. Our system ensures fair competition through a rigorously enforced Balance of Performance (BoP) system set within each class(es) available.</p>
+
+                                <a href="#" class="inline-block bg-fia-red text-white font-bold py-2 px-6 rounded-md shadow-md shadow-fia-red/40 hover:bg-red-700 transition duration-300 uppercase text-sm">
+                                    Download Full Registry
+                                </a>
+                                <p class="mt-4 text-xs text-white-primary/60 italic">Reference: Official Master Car & Class Registry 2025.docx</p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="p-4 bg-dark-primary/50 rounded-lg border-l-4 border-fia-red">
+                                    <p class="text-xl font-bold text-fia-red">Hypercar (LMDh/LMH)</p>
+                                    <p class="text-sm text-white-primary/80 mt-1">Confirmed Models: BMW M Hybrid V8, Porsche 963, Alpine A424 V6</p>
+                                    <p class="text-xs text-white-primary/60 mt-2">Required License: Platinum / Gold</p>
+                                </div>
+                                <div class="p-4 bg-dark-primary/50 rounded-lg border-l-4 border-neon-cyan">
+                                    <p class="text-xl font-bold text-neon-cyan">FIA-Spec GT3</p>
+                                    <p class="text-sm text-white-primary/80 mt-1">Confirmed Models: Acura NSX GT3 Evo, Aston Martin Vantage GT3, Nissan GT-R R35 GT3</p>
+                                    <p class="text-xs text-white-primary/60 mt-2">Required License: Gold / Silver</p>
+                                </div>
+                                <div class="p-4 bg-dark-primary/50 rounded-lg border-l-4 border-fia-red">
+                                    <p class="text-xl font-bold text-fia-red">GT4 / Touring Car</p>
+                                    <p class="text-sm text-white-primary/80 mt-1">Confirmed Models: Alpine A110 GT4, BMW M2 CS Racing, Subaru Impreza WRX STI</p>
+                                    <p class="text-xs text-white-primary/60 mt-2">Required License: Silver / Bronze</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+
+            <div class="bg-white-primary text-text-dark">
+                <section id="driver-portal-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-4xl font-futura-like font-black text-fia-red mb-12 uppercase tracking-tight text-center">Driver License Progression </h2>
+
+                    <div class="bg-light-card p-8 rounded-xl shadow-2xl border-t-4 border-text-dark/70 text-text-dark/90">
+                        <h3 class="text-3xl font-bold text-fia-red mb-6">The Four Tiers of Certification</h3>
+                        <p class="text-text-dark/80 mb-8">The certification system governs eligibility for all championships, enforcing safety and providing a clear, transparent progression path based on skill, consistency, and racecraft.</p>
+
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                            <div class="p-4 rounded-xl bg-license-bronze shadow-2xl shadow-license-bronze/50 border border-license-bronze/70 transition">
+                                <p class="text-2xl font-black text-white">BRONZE</p>
+                                <p class="text-xs text-white/80 uppercase mt-1">Entry-Level</p>
+                                <ul class="list-disc ml-4 mt-3 text-sm text-white/90 space-y-1">
+                                    <li>Basic Racecraft & Safe Driving</li>
+                                    <li>Consistent Lap Times</li>
+                                    <li>Club Spec Cup & National Challenges</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 rounded-xl bg-license-silver shadow-2xl shadow-text-dark/10 border border-license-silver/70 transition">
+                                <p class="text-2xl font-black text-dark-primary">SILVER</p>
+                                <p class="text-xs text-dark-primary/80 uppercase mt-1">Intermediate</p>
+                                <ul class="list-disc ml-4 mt-3 text-sm text-dark-primary/90 space-y-1">
+                                    <li>Clean Overtakes & Defensive Driving</li>
+                                    <li>Tyre/Fuel Management</li>
+                                    <li>National Touring Cars & GT4 Challenge</li>
+                                    </ul>
+                            </div>
+                            <div class="p-4 rounded-xl bg-license-gold shadow-2xl shadow-text-dark/20 border border-license-gold/70 transition">
+                                <p class="text-2xl font-black text-dark-primary">GOLD</p>
+                                <p class="text-xs text-dark-primary/80 uppercase mt-1">Advanced Endurance</p>
+                                <ul class="list-disc ml-4 mt-3 text-sm text-dark-primary/90 space-y-1">
+                                    <li>Multi-Class Awareness</li>
+                                    <li>Pit Strategy & Adaptability</li>
+                                    <li>WEC, ELMS, IMSA (GT3/Hypercar)</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 rounded-xl bg-license-platinum shadow-2xl shadow-text-dark/20 border border-license-platinum/70 transition">
+                                <p class="text-2xl font-black text-dark-primary">PLATINUM</p>
+                                <p class="text-xs text-dark-primary/80 uppercase mt-1">Professional</p>
+                                <ul class="list-disc ml-4 mt-3 text-sm text-dark-primary/90 space-y-1">
+                                    <li>Mastery of All Disciplines</li>
+                                    <li>Advanced Team Leadership & Strategy</li>
+                                    <li>F1 World Championship & Hypercar World Cup</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 text-center">
+                            <button data-modal-open="login-modal" class="inline-block bg-neon-cyan text-dark-primary font-bold py-3 px-8 rounded-md shadow-lg shadow-neon-cyan/40 hover:bg-neon-cyan/80 transition duration-300 uppercase tracking-wider text-lg">
+                                Login to Manage License
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="bg-dark-primary text-text-light">
+                <section id="strategy-guide" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-4xl font-futura-like font-black text-neon-cyan mb-12 uppercase tracking-tight text-center">Strategy & Competitive Mindset</h2>
+
+                    <div id="adjust" class="bg-dark-card p-8 rounded-xl shadow-2xl border-t-4 border-neon-cyan text-text-light/90">
+                        <div class="grid md:grid-cols-3 gap-8">
+
+                            <div class="p-4 border-l-4 border-fia-red">
+                                <h3 class="text-2xl font-bold text-neon-cyan mb-2">Meticulous Car Setup</h3>
+                                <p class="text-sm text-text-light/80">Success begins with the setup. Prioritize tire pressure and temperature for long-run consistency over qualifying speed, especially in endurance formats.</p>
+                            </div>
+
+                            <div class="p-4 border-l-4 border-neon-cyan">
+                                <h3 class="text-2xl font-bold text-fia-red mb-2">Practice Regimen</h3>
+                                <p class="text-sm text-text-light/80">Teams must simulate full race stints to understand the precise rate of tire wear, and practice seamless pit stop procedures during organized sessions.</p>
+                            </div>
+
+                            <div class="p-4 border-l-4 border-fia-red">
+                                <h3 class="text-2xl font-bold text-neon-cyan mb-2">Strategic Planning</h3>
+                                <p class="text-sm text-text-light/80">Develop a pre-planned strategy for BoP (Balance of Performance) and Success Ballast impacts. Tactical fuel management and pit windows are paramount.</p>
+                            </div>
+
+                        </div>
+
+                        <a href="#" class="inline-flex items-center text-fia-red hover:text-neon-cyan transition duration-300 font-medium mt-8">
+                            Download The Competitive Mindset Guide
+                            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    </div>
+                </section>
+
+
+                <footer class="bg-dark-card py-8 mt-16 border-t border-neon-cyan/20">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white-primary/80 text-sm">
+                        <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8">
+
+                            <p>&copy; 2025 Le Mans Mobile Championship Esports. All Rights Reserved.</p>
+
+                            <div class="flex space-x-6">
+                                <a href="#" class="hover:opacity-80 transition duration-300" aria-label="Visit our YouTube channel">
+                                    <img src="https://i.ibb.co/qY8Vwphb/yt-icon-white-digital.png" alt="YouTube Icon" border="0" class="w-7 h-7 object-contain">
+                                </a>
+                                <a href="#" class="hover:opacity-80 transition duration-300" aria-label="Join our Discord community">
+                                    <img src="https://i.ibb.co/R8scxZ9/Discord-Symbol-White.png" alt="Discord Icon" border="0" class="w-7 h-7 object-contain">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+
+        </div>
+
+        <div id="driver-dashboard" class="content-view bg-white-primary text-text-dark pt-12 pb-24">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+                <!-- Dashboard Header -->
+                <div class="mb-12">
+                    <h2 class="text-4xl font-futura-like font-black text-fia-red uppercase tracking-tight">
+                        Driver Dashboard
+                    </h2>
+                    <p id="dashboard-welcome" class="text-lg text-text-dark/70 mt-1">Welcome, DRIVER001</p>
+                </div>
+
+                <!-- Section 1: Driver Profile -->
+                <section id="dashboard-profile-section" class="bg-dark-card text-text-light p-8 rounded-xl shadow-2xl border-t-4 border-neon-cyan mb-16">
+                    <div class="flex flex-col sm:flex-row justify-between items-start mb-8">
+                        <div>
+                            <h3 class="text-3xl font-bold text-neon-cyan">Driver Profile</h3>
+                            <p id="driver-primary-id" class="text-text-light/70">DRIVER001</p>
+                        </div>
+                        <div class="mt-4 sm:mt-0 flex space-x-2">
+                            <button id="edit-profile-button" class="bg-neon-cyan text-dark-primary font-bold py-2 px-4 rounded-lg hover:bg-neon-cyan/80 transition duration-300 text-sm uppercase">Edit Profile</button>
+                            <button id="load-data-button" class="bg-fia-red text-white font-bold py-2 px-5 rounded-lg hover:bg-red-700 transition duration-300 text-sm uppercase flex items-center justify-center space-x-2 w-40 disabled:opacity-75 disabled:cursor-not-allowed">
+                                <span id="load-data-icon-default">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l5 5M20 20l-5-5"></path></svg>
+                                </span>
+                                <span id="load-data-text">Refresh Data</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="stats-profile-card" class="grid md:grid-cols-3 lg:grid-cols-5 gap-6 text-center data-panel-inactive">
+                        <!-- License -->
+                        <div class="bg-dark-primary p-4 rounded-lg">
+                            <p class="text-text-light/70 text-xs uppercase tracking-widest">License</p>
+                            <p id="license-tier" class="text-4xl font-black mt-1">N/A</p>
+                        </div>
+                        <!-- Safety Rating -->
+                        <div class="bg-dark-primary p-4 rounded-lg">
+                            <p class="text-text-light/70 text-xs uppercase tracking-widest">Safety Rating</p>
+                            <p id="safety-rating" class="text-4xl font-bold text-neon-cyan mt-1">--</p>
+                        </div>
+                        <!-- Skill Rating -->
+                        <div class="bg-dark-primary p-4 rounded-lg">
+                            <p class="text-text-light/70 text-xs uppercase tracking-widest">Driver Rating</p>
+                            <p id="skill-rating" class="text-4xl font-bold text-fia-red mt-1">----</p>
+                        </div>
+                        <!-- Career Stats -->
+                        <div class="bg-dark-primary p-4 rounded-lg md:col-span-3 lg:col-span-2 grid grid-cols-3 gap-px">
+                            <div class="text-center">
+                                <p class="text-text-light/70 text-xs uppercase tracking-widest">Races</p>
+                                <p id="stat-races" class="text-2xl font-bold mt-2">0</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-text-light/70 text-xs uppercase tracking-widest">Wins</p>
+                                <p id="stat-wins" class="text-2xl font-bold mt-2">0</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-text-light/70 text-xs uppercase tracking-widest">Podiums</p>
+                                <p id="stat-podiums" class="text-2xl font-bold mt-2">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 2: Team Management -->
+                <section id="dashboard-team-section" class="bg-light-card p-8 rounded-xl shadow-xl border-t-4 border-fia-red mb-16">
+                    <!-- State: No Club -->
+                    <div id="no-team-view">
+                        <h3 class="text-3xl font-bold text-fia-red mb-4">Club Management</h3>
+                        <div class="text-center bg-white-primary p-8 rounded-lg border border-gray-200">
+                            <p class="text-text-dark/80">You are not currently part of a club.</p>
+                            <button data-modal-open="create-team-modal" class="mt-4 bg-neon-cyan text-dark-primary font-bold py-3 px-8 rounded-md shadow-lg shadow-neon-cyan/40 hover:bg-neon-cyan/80 transition duration-300 uppercase tracking-wider">
+                                Create a Team
+                            </button>
+                        </div>
+                    </div>
+                    <!-- State: Has Team -->
+                    <div id="team-view" class="hidden">
+                        <div class="flex flex-col sm:flex-row justify-between items-start mb-6">
+                            <div>
+                                <h3 class="text-3xl font-bold text-fia-red">Club Hub</h3>
+                                <p id="team-hub-name" class="text-2xl font-bold text-text-dark">Apex Racing <span class="text-neon-cyan">[APX]</span></p>
+                            </div>
+                            <div id="team-controls" class="mt-4 sm:mt-0 flex space-x-2">
+                                <div id="owner-controls" class="hidden space-x-2">
+                                    <button data-modal-open="invite-driver-modal" class="bg-neon-cyan text-dark-primary font-bold py-2 px-4 rounded-lg hover:bg-neon-cyan/80 transition duration-300 text-sm uppercase">Invite Driver</button>
+                                    <button data-modal-open="transfer-ownership-modal" class="bg-yellow-500 text-dark-primary font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition duration-300 text-sm uppercase">Transfer</button>                                    
+                                </div>
+                                <button id="disband-team-button" class="hidden bg-red-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-900 transition duration-300 text-sm uppercase">Disband</button>
+                                <button id="leave-team-button" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 text-sm uppercase">Leave Team</button>
+                            </div>
+                        </div>
+                        <div class="bg-white-primary p-6 rounded-lg border border-gray-200">
+                            <h4 class="text-xl font-bold text-text-dark mb-4">Club Roster</h4>
+                            <div id="team-roster-list" class="space-y-3">
+                                <!-- Roster will be populated by JS -->
+                                <p class="text-text-dark/60 italic">Loading roster...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Event Center -->
+                <section id="game-data-section" class="bg-dark-card text-text-light p-8 rounded-xl shadow-2xl border-t-4 border-neon-cyan data-panel-inactive">
+                    <h3 class="text-3xl font-bold text-neon-cyan mb-6">Event Center</h3>
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div>
+                            <h4 class="text-xl font-bold text-fia-red mb-4 border-b border-fia-red/30 pb-2">Upcoming Races</h4>
+                            <div id="enrollment-list" class="space-y-4">
+                                <p class="text-text-light/50 text-center italic">Refresh driver data to see upcoming races.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-fia-red mb-4 border-b border-fia-red/30 pb-2">Recent Results</h4>
+                            <div id="results-list" class="space-y-4">
+                                <p class="text-text-light/50 text-center italic">Refresh driver data to see recent results.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Templates for dynamic content -->
+                <template id="schedule-item-template">
+                    <div class="flex justify-between items-center p-3 bg-dark-primary rounded-lg">
+                        <div>
+                            <p class="font-bold text-text-light schedule-name">Race Name</p>
+                            <p class="text-xs text-text-light/60 schedule-details">Class & Slot Info</p>
+                        </div>
+                        <div class="schedule-action">
+                            <!-- Action button or status will be injected here -->
+                        </div>
+                    </div>
+                </template>
+
+                <template id="result-item-template">
+                    <div class="flex justify-between items-center p-3 bg-dark-primary rounded-lg">
+                        <div>
+                            <p class="font-bold text-text-light result-name">Race Name</p>
+                            <p class="text-xs text-text-light/60 result-details">Class & Date Info</p>
+                        </div>
+                        <p class="text-2xl font-bold result-position">P1</p>
+                    </div>
+                </template>
+
+            </div>
+        </div>
+
+
+        <div id="standings-page" class="content-view bg-white-primary text-text-dark pt-20 pb-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <h2 class="text-5xl font-futura-like font-black text-fia-red mb-4 uppercase tracking-tight">
+                    Official Championship Standings
+                </h2>
+                <p class="text-lg text-text-dark/80 border-b pb-4 mb-12">
+                    Live driver and team standings across all hosted championships. Data is refreshed every 15 minutes.
+                </p>
+
+                <div class="flex flex-col md:flex-row gap-4 mb-8">
+                    <select id="standing-series-select" class="p-3 bg-dark-card border-2 border-text-light/20 rounded-lg text-text-light focus:border-fia-red focus:ring-fia-red transition">
+                        <option value="all">Select Series (e.g., WEC, ELMS, IMSA)</option>
+                        <option value="wec">World Endurance Championship (WEC)</option>
+                        <option value="elms">European Le Mans Cup (ELMS)</option>
+                        <option value="imsa">IMSA Endurance Cup</option>
+                    </select>
+                    <select id="standing-class-select" class="p-3 bg-dark-card border-2 border-text-light/20 rounded-lg text-text-light focus:border-fia-red focus:ring-fia-red transition">
+                        <option value="all">Select Class (e.g., Hypercar, GT3)</option>
+                        <option value="hypercar">Hypercar (LMH/LMDh)</option>
+                        <option value="gt3">FIA-Spec GT3</option>
+                        <option value="gt4">GT4 Challenge</option>
+                    </select>
+                </div>
+
+                <div id="standings-table-area" class="bg-light-card p-6 rounded-xl shadow-xl border-t-4 border-neon-cyan">
+                    <h3 class="text-2xl font-bold text-neon-cyan mb-4">Current Driver Points - WEC Hypercar</h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-text-dark/20">
+                            <thead class="bg-text-dark/5">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-text-dark uppercase tracking-wider">POS</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-text-dark uppercase tracking-wider">DRIVER / TEAM</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-text-dark uppercase tracking-wider">CAR</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-text-dark uppercase tracking-wider">PTS</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-text-dark/10 text-text-dark/90">
+                                <tr>
+                                    <td colspan="4" class="px-6 py-4 whitespace-nowrap text-center text-lg italic text-text-dark/50">
+                                        Data will load here from the dedicated Standings API.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div id="login-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-neon-cyan/20 border-t-4 border-fia-red">
+            <div class="flex justify-end">
+                <button data-modal-close class="text-text-dark/60 hover:text-fia-red transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-futura-like font-black text-text-dark uppercase tracking-wide">Driver Portal</h2>
+                <p class="text-text-dark/70 mt-2 text-sm">Access your secure team & license dashboard.</p>
+            </div>
+
+            <form id="driver-login-form" class="space-y-6">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-text-dark mb-2">Email</label>
+                    <input type="email" id="login-email" placeholder="Enter your registered email" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-text-dark mb-2">Password</label>
+                    <input type="password" id="password" placeholder="Secure Password" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-neon-cyan focus:ring-neon-cyan">
+                        <label for="remember-me" class="ml-2 block text-sm text-text-dark/80">Remember me</label>
+                    </div>
+                    <a href="#" data-modal-switch="forgot-password-modal" class="text-sm font-medium text-fia-red hover:text-red-700">Forgot password?</a>
+                </div>
+                <p id="login-message" class="text-center text-sm text-fia-red h-4"></p>
+
+                <button type="submit" class="w-full bg-fia-red text-white font-bold py-3 rounded-lg shadow-lg shadow-fia-red/50 hover:bg-red-700 transition duration-300 uppercase tracking-wider text-lg transform hover:scale-[1.01]">
+                    Login
+                </button>
+
+                <p class="text-center text-xs text-text-dark/50 pt-2">Trouble logging in? Contact Technical Support.</p>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div id="signup-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-neon-cyan/20 border-t-4 border-neon-cyan">
+            <div class="flex justify-end">
+                <button data-modal-close class="text-text-dark/60 hover:text-fia-red transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-futura-like font-black text-text-dark uppercase tracking-wide">Create Account</h2>
+                <p class="text-text-dark/70 mt-2 text-sm">Join the official endurance racing grid.</p>
+            </div>
+
+            <form id="signup-form" class="space-y-6">
+                <div>
+                    <label for="signup-email" class="block text-sm font-medium text-text-dark mb-2">Email Address</label>
+                    <input type="email" id="signup-email" placeholder="you@example.com" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+                <div>
+                    <label for="signup-full-name" class="block text-sm font-medium text-text-dark mb-2">Full Name</label>
+                    <input type="text" id="signup-full-name" placeholder="e.g., Alex Smith" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+                <div>
+                    <label for="signup-driver-id" class="block text-sm font-medium text-text-dark mb-2">Driver ID</label>
+                    <input type="text" id="signup-driver-id" placeholder="Choose your unique 8-digit ID" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+                <div>
+                    <label for="signup-password" class="block text-sm font-medium text-text-dark mb-2">Password</label>
+                    <input type="password" id="signup-password" placeholder="Create a secure password" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+                <div>
+                    <label for="signup-confirm-password" class="block text-sm font-medium text-text-dark mb-2">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" placeholder="Re-enter your password" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+
+                <p id="signup-message" class="text-center text-sm text-fia-red h-4"></p>
+
+                <button type="submit" class="w-full bg-neon-cyan text-dark-primary font-bold py-3 rounded-lg shadow-lg shadow-neon-cyan/40 hover:bg-neon-cyan/80 transition duration-300 uppercase tracking-wider text-lg transform hover:scale-[1.01]">
+                    Sign Up
+                </button>
+
+                <p class="text-center text-xs text-text-dark/50 pt-2">Already have an account? <a href="#" data-modal-switch="login-modal" class="font-bold text-fia-red hover:underline">Login here</a>.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Team Modal -->
+    <div id="create-team-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-neon-cyan/20 border-t-4 border-fia-red">
+            <div class="flex justify-end">
+                <button data-modal-close class="text-text-dark/60 hover:text-fia-red transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-futura-like font-black text-text-dark uppercase tracking-wide">Create Your Team</h2>
+                <p class="text-text-dark/70 mt-2 text-sm">Establish your presence on the grid.</p>
+            </div>
+
+            <form id="create-team-form" class="space-y-6">
+                <div>
+                    <label for="team-name" class="block text-sm font-medium text-text-dark mb-2">Team Name</label>
+                    <input type="text" id="team-name" placeholder="e.g., Apex Racing" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+                <div>
+                    <label for="team-tag" class="block text-sm font-medium text-text-dark mb-2">Team Tag (3-4 Characters)</label>
+                    <input type="text" id="team-tag" placeholder="e.g., APX" required maxlength="4" class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+
+                <p id="create-team-message" class="text-center text-sm text-fia-red h-4"></p>
+
+                <button type="submit" class="w-full bg-fia-red text-white font-bold py-3 rounded-lg shadow-lg shadow-fia-red/50 hover:bg-red-700 transition duration-300 uppercase tracking-wider text-lg transform hover:scale-[1.01]">
+                    Found Team
+                </button>
+
+                <p class="text-center text-xs text-text-dark/50 pt-2">Team details can be edited later from your dashboard.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-neon-cyan/20 border-t-4 border-fia-red">
+            <div class="flex justify-end">
+                <button data-modal-close class="text-text-dark/60 hover:text-fia-red transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-futura-like font-black text-text-dark uppercase tracking-wide">Reset Password</h2>
+                <p class="text-text-dark/70 mt-2 text-sm">Enter your Driver ID to receive a password reset link.</p>
+            </div>
+
+            <form id="forgot-password-form" class="space-y-6">
+                <div>
+                    <label for="reset-email" class="block text-sm font-medium text-text-dark mb-2">Email Address</label>
+                    <input type="email" id="reset-email" placeholder="Enter your registered email" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+
+                <p id="forgot-password-message" class="text-center text-sm text-fia-red h-4"></p>
+
+                <button type="submit" class="w-full bg-fia-red text-white font-bold py-3 rounded-lg shadow-lg shadow-fia-red/50 hover:bg-red-700 transition duration-300 uppercase tracking-wider text-lg transform hover:scale-[1.01]">
+                    Send Reset Link
+                </button>
+
+                <p class="text-center text-xs text-text-dark/50 pt-2">Remember your password? <a href="#" data-modal-switch="login-modal" class="font-bold text-neon-cyan hover:underline">Login here</a>.</p>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Invite Driver Modal -->
+    <div id="invite-driver-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-neon-cyan/20 border-t-4 border-neon-cyan">
+            <div class="flex justify-end">
+                <button data-modal-close class="text-text-dark/60 hover:text-fia-red transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin-round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-futura-like font-black text-text-dark uppercase tracking-wide">Invite Driver</h2>
+                <p class="text-text-dark/70 mt-2 text-sm">Grow your roster by inviting a registered driver.</p>
+            </div>
+
+            <form id="invite-driver-form" class="space-y-6">
+                <div>
+                    <label for="invite-driver-id" class="block text-sm font-medium text-text-dark mb-2">Driver ID</label>
+                    <input type="text" id="invite-driver-id" placeholder="Enter the 8-digit ID of the driver to invite" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+
+                <p id="invite-driver-message" class="text-center text-sm text-fia-red h-4"></p>
+
+                <button type="submit" class="w-full bg-neon-cyan text-dark-primary font-bold py-3 rounded-lg shadow-lg shadow-neon-cyan/40 hover:bg-neon-cyan/80 transition duration-300 uppercase tracking-wider text-lg transform hover:scale-[1.01]">
+                    Send Invite
+                </button>
+
+                <p class="text-center text-xs text-text-dark/50 pt-2">The driver will receive a notification to accept or decline.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-neon-cyan/20 border-t-4 border-neon-cyan">
+            <div class="flex justify-end">
+                <button data-modal-close class="text-text-dark/60 hover:text-fia-red transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-futura-like font-black text-text-dark uppercase tracking-wide">Edit Profile</h2>
+                <p class="text-text-dark/70 mt-2 text-sm">Update your personal information.</p>
+            </div>
+
+            <form id="edit-profile-form" class="space-y-6">
+                <div>
+                    <label for="edit-full-name" class="block text-sm font-medium text-text-dark mb-2">Full Name</label>
+                    <input type="text" id="edit-full-name" placeholder="e.g., Alex Smith" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                </div>
+                <div>
+                    <label for="edit-driver-id" class="block text-sm font-medium text-text-dark mb-2">Driver ID (Read-only)</label>
+                    <input type="text" id="edit-driver-id" disabled class="w-full p-3 bg-dark-primary/50 text-text-light/70 rounded-lg border-2 border-dark-primary/50 cursor-not-allowed">
+                </div>
+
+                <p id="edit-profile-message" class="text-center text-sm text-fia-red h-4"></p>
+
+                <button type="submit" class="w-full bg-neon-cyan text-dark-primary font-bold py-3 rounded-lg shadow-lg shadow-neon-cyan/40 hover:bg-neon-cyan/80 transition duration-300 uppercase tracking-wider text-lg transform hover:scale-[1.01]">
+                    Save Changes
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Transfer Ownership Modal -->
+    <div id="transfer-ownership-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-fia-red/20 border-t-4 border-fia-red">
+            <div class="flex justify-end">
+                <button data-modal-close class="text-text-dark/60 hover:text-fia-red transition duration-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-futura-like font-black text-text-dark uppercase tracking-wide">Transfer Ownership</h2>
+                <p class="text-text-dark/70 mt-2 text-sm">Select a team member to become the new owner. This action is irreversible.</p>
+            </div>
+
+            <form id="transfer-ownership-form" class="space-y-6">
+                <div>
+                    <label for="new-owner-select" class="block text-sm font-medium text-text-dark mb-2">New Team Owner</label>
+                    <select id="new-owner-select" required class="w-full p-3 bg-dark-primary text-text-light rounded-lg border-2 border-dark-primary focus:border-neon-cyan focus:ring-neon-cyan transition duration-200 shadow-inner">
+                        <option value="">Select a member...</option>
+                        <!-- Members will be populated by JS -->
+                    </select>
+                </div>
+
+                <p id="transfer-ownership-message" class="text-center text-sm text-fia-red h-4"></p>
+
+                <button type="submit" class="w-full bg-fia-red text-white font-bold py-3 rounded-lg shadow-lg shadow-fia-red/50 hover:bg-red-700 transition duration-300 uppercase tracking-wider text-lg transform hover:scale-[1.01]">
+                    Confirm Transfer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Disband Confirm Modal -->
+    <div id="disband-confirm-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-fia-red/20 border-t-4 border-fia-red">
+            <div class="text-center">
+                <h2 class="text-3xl font-futura-like font-black text-text-dark uppercase tracking-wide">Disband Club</h2>
+                <p class="text-text-dark/70 mt-4">Are you sure you want to disband this club? This will remove all members and delete the club permanently. This action cannot be undone.</p>
+                <div class="mt-8 flex justify-center space-x-4">
+                    <button id="disband-confirm-yes" class="bg-fia-red text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition duration-300 uppercase">Yes, Disband</button>
+                    <button data-modal-close class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 transition duration-300 uppercase">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner Leave Warning Modal -->
+    <div id="owner-leave-warning-modal" data-modal-close class="login-modal-overlay fixed inset-0 flex items-center justify-center bg-dark-primary/80 backdrop-blur-sm p-4">
+        <div class="bg-white-primary p-8 md:p-12 rounded-xl w-full max-w-lg shadow-2xl shadow-fia-red/20 border-t-4 border-fia-red">
+            <div class="text-center">
+                <h2 class="text-3xl font-futura-like font-black text-text-dark uppercase tracking-wide">Ownership Transfer Required</h2>
+                <p class="text-text-dark/70 mt-4">You cannot leave the club while you are the owner and other members are present. You must first transfer ownership to another member.</p>
+                <div class="mt-8 flex justify-center space-x-4">
+                    <button data-modal-switch="transfer-ownership-modal" class="bg-neon-cyan text-dark-primary font-bold py-2 px-6 rounded-lg hover:bg-neon-cyan/80 transition duration-300 uppercase">Transfer Ownership</button>
+                    <button data-modal-close class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 transition duration-300 uppercase">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Global variables provided by the Canvas environment
+       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEgpi_OAx9sBVrxFPyuLOi_YyhDejxqHc",
+            authDomain: "project-racer-c081a.firebaseapp.com",
+            projectId: "project-racer-c081a",
+            storageBucket: "project-racer-c081a.firebasestorage.app",
+            messagingSenderId: "878532190753",
+            appId: "1:878532190753:web:0eaf1394742aa75f303960",
+            measurementId: "G-85E0C692FG"
+            };
+
+        const appId = firebaseConfig.appId || 'default-app-id';
+        const initialAuthToken = null; // Not used in this email/password setup
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, addDoc, collection, updateDoc, query, where, getDocs, documentId, onSnapshot, deleteDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Initialization (Placeholder)
+        let app;
+        let auth;
+        let db;
+        let isAuthReady = false;
+
+        try {
+            if (Object.keys(firebaseConfig).length > 0) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                // Centralized Auth State Management
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        await handleLoginSuccess(user);
+                    } else {
+                        handleLogout();
+                    }
+                });
+
+            } else {
+                isAuthReady = true;
+            }
+        } catch (error) {
+            console.error("Error during Firebase initialization:", error);
+            isAuthReady = true;
+        }
+
+
+        // --- UI ELEMENTS ---
+        const mobileMenu = document.getElementById('mobile-menu');
+        const openButtons = document.querySelectorAll('.open-nav');
+        const closeButton = document.querySelector('.close-nav');
+        const mobileLinks = document.querySelectorAll('.nav-link-mobile');
+        const desktopLinks = document.querySelectorAll('#public-header .nav-link');
+
+        const profileDropdown = document.getElementById('profile-dropdown');
+        const profileButtonLoggedOut = document.getElementById('profile-button-logged-out');
+        const profileButtonLoggedIn = document.getElementById('profile-button-logged-in');
+        const loggedOutDropdown = document.getElementById('logged-out-dropdown');
+        const loggedInDropdown = document.getElementById('logged-in-dropdown');
+        const dropdownDriverId = document.getElementById('dropdown-driver-id');
+        const profileLogoutButton = document.getElementById('profile-logout-button');
+
+        // Header display elements
+        const headerDriverName = document.getElementById('header-driver-name');
+        const headerLicenseBadge = document.getElementById('header-license-badge');
+
+        // Search elements
+        const headerSearchInput = document.getElementById('header-search');
+        const headerSearchButton = document.getElementById('header-search-button');
+
+        const disbandConfirmYes = document.getElementById('disband-confirm-yes');
+
+        const disbandTeamButton = document.getElementById('disband-team-button');
+
+        const editProfileButton = document.getElementById('edit-profile-button');
+        const messageButton = document.getElementById('message-button');
+        const messageDropdown = document.getElementById('message-dropdown');
+        const notificationDot = document.getElementById('notification-dot');
+
+        const loginForm = document.getElementById('driver-login-form');
+        const loginMessage = document.getElementById('login-message');
+
+        const publicHeader = document.getElementById('public-header');
+        const driverHeader = document.getElementById('driver-header');
+        
+        // VIEW SWITCHING ELEMENTS
+        const publicHomepage = document.getElementById('public-homepage');
+        const driverDashboard = document.getElementById('driver-dashboard');
+        const standingsPage = document.getElementById('standings-page'); // NEW STANDINGS VIEW
+
+        const dropdownDashboardButton = document.getElementById('dropdown-dashboard-button');
+        const dashboardHomeButton = document.getElementById('dashboard-home-button');
+        const dashboardWelcome = document.getElementById('dashboard-welcome');
+        const currentDriverDisplay = document.getElementById('current-driver-display');
+        const logoutButton = document.getElementById('logout-button');
+
+        // Dashboard Elements
+        const loadDataButton = document.getElementById('load-data-button');
+        const gameDataSection = document.getElementById('game-data-section');
+        const statsProfileCard = document.getElementById('stats-profile-card');
+        
+        // Dynamic Text Elements
+        const licenseTier = document.getElementById('license-tier');
+        const safetyRating = document.getElementById('safety-rating');
+        const skillRating = document.getElementById('skill-rating');
+
+        // Team Management Elements
+        const noTeamView = document.getElementById('no-team-view');
+        const teamView = document.getElementById('team-view');
+        const inviteDriverButton = document.getElementById('invite-driver-button');
+
+        const LICENSE_COLORS = {
+            'PLATINUM': '#E5E4E2',
+            'GOLD': '#FFD700',
+            'SILVER': '#BFC1C2',
+            'BRONZE': '#CD7F32',
+            'N/A': '#E5E7EB'
+        };
+
+
+        // --- STATE MANAGEMENT ---
+        // *** CRITICAL CHANGE: Start with logged-out state ***
+        let isLoggedIn = false;
+        let currentDriverName = null;
+        let hasTeam = false; // New state for team management
+        let currentDriverId = null;
+        
+
+        // Function to switch between main views
+        function switchView(targetId) {
+            const views = [publicHomepage, driverDashboard, standingsPage];
+            views.forEach(view => {
+                if (view.id === targetId) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+
+            // Simplified logic for theme and header visibility
+            if (targetId === 'driver-dashboard') {
+                // Dashboard View
+                document.body.classList.remove('bg-white-primary', 'text-text-dark');
+                document.body.classList.add('bg-white-primary', 'text-text-dark');
+                driverHeader.classList.remove('hidden');
+                publicHeader.classList.add('hidden');
+            } else {
+                // Public Views (Homepage, Standings)
+                document.body.classList.remove('bg-dark-primary', 'text-text-light');
+                document.body.classList.add('bg-white-primary', 'text-text-dark');
+                driverHeader.classList.add('hidden');
+                publicHeader.classList.remove('hidden');
+            }
+        }
+
+        // Main UI Visibility Update
+        function updateUIVisibility() {
+            if (isLoggedIn) {
+                // If logged in, go to the dashboard
+                switchView('driver-dashboard');
+                dashboardWelcome.textContent = `Welcome, ${currentDriverName}`;
+                document.getElementById('driver-primary-id').textContent = currentDriverId;
+                // Update dropdown for logged-in state
+                loggedOutDropdown.classList.add('hidden');
+                loggedInDropdown.classList.remove('hidden');
+                dropdownDriverId.textContent = currentDriverId;
+                // Update public header for logged-in state
+                profileButtonLoggedOut.classList.add('hidden');
+                profileButtonLoggedIn.classList.remove('hidden');
+                headerDriverName.textContent = currentDriverName;
+                // TODO: The license badge should be updated from API data
+                headerLicenseBadge.textContent = 'BRONZE'; 
+            } else {
+                // Reset team view on logout
+                hasTeam = false;
+                noTeamView.classList.remove('hidden');
+                teamView.classList.add('hidden');
+                const rosterList = document.getElementById('team-roster-list');
+                if(rosterList) {
+                    rosterList.innerHTML = `<p class="text-text-dark/60 italic">Loading roster...</p>`;
+                }
+                // If logged out, go to the public homepage
+                switchView('public-homepage');
+                currentDriverId = null;
+                currentDriverName = null;
+                // Update dropdown for logged-out state
+                loggedOutDropdown.classList.remove('hidden');
+                loggedInDropdown.classList.add('hidden');
+                // Update public header for logged-out state
+                profileButtonLoggedOut.classList.remove('hidden');
+                profileButtonLoggedIn.classList.add('hidden');
+                // Ensure the public header is visible
+                publicHeader.classList.remove('hidden');
+                driverHeader.classList.add('hidden');
+            }
+            document.body.style.overflow = '';
+        }
+
+        // --- GAME SELECTION & API PLACEHOLDER LOGIC ---
+
+        // NEW: Placeholder for your actual API fetch function
+        async function fetchDriverGameStats() {
+            alertMessage(`Fetching real-time data...`, 'info');
+            
+            // --- API INTEGRATION POINT ---
+            // REPLACE THIS MOCK DATA WITH YOUR REAL API CALLS
+            
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+            
+            // The gameId check is removed as we now have one "Load Data" button
+                return {
+                    success: true,
+                    license: 'PLATINUM', // This will come from the API
+                    sr: 'S 4.99',       // This will come from the API
+                    elo: '2600',        // This will come from the API
+                    colorKey: 'PLATINUM',
+                    schedule: [
+                        { id: 1, name: 'WEC Rd. 1: Sebring 1000 Miles', class: 'Hypercar', status: 'ENROLLED', slot: '3/4' },
+                        { id: 2, name: 'IMSA Laguna Seca 240', class: 'GT3 Spec', status: 'ENROLL', slot: '1/2' },
+                        // ... more schedule items
+                    ],
+                    results: [
+                        { id: 1, name: 'WEC Rd. 0: Prologue', result: 'P2', date: '2025.01.10', class: 'Hypercar' },
+                        { id: 2, name: 'National Touring Cup Rd. 3', result: 'P1', date: '2025.01.05', class: 'Touring Car' },
+                        // ... more results items
+                    ]
+                };
+        }
+
+
+        async function loadGameSpecificData() {
+            
+            // 1. Reset Display
+            gameDataSection.classList.add('data-panel-inactive');
+            statsProfileCard.classList.add('data-panel-inactive');
+            
+            // Remove animation classes to allow re-animation on next load
+            statsProfileCard.classList.remove('animate-card-load');
+            gameDataSection.classList.remove('animate-card-load');
+
+
+            // Reset dynamic text
+            licenseTier.textContent = 'N/A';
+            licenseTier.style.color = LICENSE_COLORS['N/A'];
+            safetyRating.textContent = '--';
+            skillRating.textContent = '----';
+            
+            // Show generic/default message in content areas
+            const enrollmentList = document.getElementById('enrollment-list');
+            const resultsList = document.getElementById('results-list');
+            enrollmentList.innerHTML = `<p class="text-text-light/50 text-center italic">Click Refresh Data to load your schedule.</p>`;
+            resultsList.innerHTML = `<p class="text-text-light/50 text-center italic">Click Refresh Data to load your results.</p>`;
+            
+            // 2. Set loading state on the button
+            const loadButton = document.getElementById('load-data-button');
+            const buttonText = document.getElementById('load-data-text');
+            const defaultIcon = document.getElementById('load-data-icon-default');
+            const originalButtonHTML = loadButton.innerHTML; // Store original content
+
+            loadButton.disabled = true;
+            defaultIcon.style.display = 'none';
+            buttonText.textContent = 'Loading...';
+            // Create and prepend spinner
+            const spinner = document.createElement('span');
+            spinner.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            loadButton.prepend(spinner);
+
+            try {
+                // 3. Start API Fetch
+                const data = await fetchDriverGameStats();
+
+                if (data.success) {
+                    // 4. Update Stats Panel Data
+                    licenseTier.textContent = data.license.toUpperCase();
+                    licenseTier.style.color = LICENSE_COLORS[data.colorKey] || LICENSE_COLORS['N/A'];
+                    safetyRating.textContent = data.sr;
+                    skillRating.textContent = data.elo;
+
+                    statsProfileCard.classList.add('animate-card-load'); // Add animation class
+                    statsProfileCard.classList.remove('data-panel-inactive');
+                    
+                    // Clear and Populate Schedule
+                    enrollmentList.innerHTML = ''; // Clear the list
+                    if (data.schedule && data.schedule.length > 0) {
+                        const scheduleTemplate = document.getElementById('schedule-item-template');
+                        if (scheduleTemplate) {
+                            data.schedule.forEach(item => {
+                            const clone = scheduleTemplate.content.cloneNode(true);
+                            clone.firstElementChild.classList.add('animate-card-load'); // Animate each item
+                            clone.querySelector('.schedule-name').textContent = item.name;
+                            clone.querySelector('.schedule-details').textContent = `${item.class} (${item.slot} Slot Filled)`;
+
+                            const statusColor = item.status === 'ENROLLED' ? 'text-green-400' : 'text-fia-red';
+                            // Corrected logic for action button
+                            const actionButton = item.status === 'ENROLLED' ? `<span class="font-bold ${statusColor}">ENROLLED</span>` : `<button class="bg-fia-red text-white py-1 px-3 rounded-md text-xs hover:bg-red-700">Enroll</button>`;
+                            clone.querySelector('.schedule-action').innerHTML = actionButton;
+
+                            enrollmentList.appendChild(clone);
+                            });
+                        }
+                    } else {
+                        enrollmentList.innerHTML = `<p class="text-text-light/50 text-center italic">No upcoming races found.</p>`;
+                    }
+
+                    // Clear and Populate Results
+                    resultsList.innerHTML = ''; // Clear the list
+                    if (data.results && data.results.length > 0) {
+                        const resultTemplate = document.getElementById('result-item-template');
+                        if (resultTemplate) {
+                            data.results.forEach(item => {
+                            const clone = resultTemplate.content.cloneNode(true);
+                            clone.firstElementChild.classList.add('animate-card-load'); // Animate each item
+                            clone.querySelector('.result-name').textContent = item.name;
+                            clone.querySelector('.result-details').textContent = `${item.class} / ${item.date}`;
+
+                            const positionEl = clone.querySelector('.result-position');
+                            positionEl.textContent = item.result;
+
+                            const positionColor = item.result === 'P1' || item.result === 'P2' ? 'text-green-400' : (item.result === 'DNF' ? 'text-red-400' : 'text-neon-cyan');
+                            positionEl.classList.add(positionColor);
+
+                            resultsList.appendChild(clone);
+                            });
+                        }
+                    } else {
+                        resultsList.innerHTML = `<p class="text-text-light/50 text-center italic">No recent results found.</p>`;
+                    }
+                    
+                    // 5. Show the main game data section and provide feedback
+                    gameDataSection.classList.add('animate-card-load');
+                    gameDataSection.classList.remove('data-panel-inactive');
+                    alertMessage(`Driver data successfully loaded!`, 'success');
+
+                } else {
+                    alertMessage(`Error: ${data.message || 'Failed to load game data.'}`, 'error');
+                } 
+            } catch (error) {
+                console.error('API Load Error:', error);
+                alertMessage('A network error occurred while loading data.', 'error');
+            } finally {
+                // 6. Restore the button to its original state
+                loadButton.disabled = false;
+                loadButton.innerHTML = originalButtonHTML;
+            }
+        }
+
+        loadDataButton.addEventListener('click', loadGameSpecificData);
+
+        // --- NAVIGATION & MODAL LOGIC ---
+
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('hidden-menu');
+            mobileMenu.classList.toggle('show-menu');
+            document.body.style.overflow = mobileMenu.classList.contains('show-menu') ? 'hidden' : '';
+        }
+
+        function handleLogout() { // This is the one called by onAuthStateChanged
+            // Unsubscribe from real-time listeners to prevent memory leaks and errors
+            if (driverProfileListener) {
+                driverProfileListener();
+                driverProfileListener = null;
+            }
+            // If user is logged in with Firebase, sign them out. This is the central sign-out point.
+            if (auth?.currentUser) {
+                signOut(auth).catch(error => console.error("Firebase sign out error", error));
+            }
+            isLoggedIn = false;
+            alertMessage('Successfully logged out.', 'info');
+            hasTeam = false; // Reset team status on logout
+            switchView('public-homepage'); // Explicitly switch to the public view
+            updateUIVisibility(); // Update headers and other UI elements
+            window.scrollTo(0, 0); // Scroll to top of the public page
+            const rememberMeCheckbox = document.getElementById('remember-me');
+            if(rememberMeCheckbox) rememberMeCheckbox.checked = false;
+        }
+
+        // --- EVENT LISTENERS ---
+        dashboardHomeButton.addEventListener('click', () => {
+            // This allows a logged-in user to go back to the homepage
+            switchView('public-homepage');
+            window.scrollTo(0, 0);
+        });
+
+        openButtons.forEach(button => button.addEventListener('click', toggleMobileMenu));
+        closeButton.addEventListener('click', toggleMobileMenu);
+
+        // Mobile and Desktop Navigation Links
+       function handleNavLinkClick(e) {
+           e.preventDefault();
+           const link = e.currentTarget;
+           const targetId = link.dataset.target;
+
+           // Close mobile menu if open
+           if (mobileMenu.classList.contains('show-menu')) {
+               setTimeout(toggleMobileMenu, 150);
+           }
+
+           if (targetId) {
+               switchView(targetId);
+               window.scrollTo(0, 0);
+           }
+       }
+
+       [...mobileLinks, ...desktopLinks, dropdownDashboardButton].forEach(link => {
+           link.addEventListener('click', handleNavLinkClick);
+       });
+
+
+        // --- NEW PROFILE & AUTH FLOW ---
+
+        // Toggle profile dropdown
+        [profileButtonLoggedOut, profileButtonLoggedIn].forEach(button => {
+            button.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent window click from closing it immediately
+            profileDropdown.classList.toggle('hidden');
+            });
+        });
+
+        // Hide dropdown if clicking outside
+        window.addEventListener('click', () => {
+            if (!profileDropdown.classList.contains('hidden')) {
+                profileDropdown.classList.add('hidden');
+            }
+        });
+
+        const createTeamForm = document.getElementById('create-team-form');
+        createTeamForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            if (!user) {
+                alertMessage('You must be logged in to create a club.', 'error');
+                return;
+            }
+
+            const teamName = document.getElementById('team-name').value.trim();
+            const teamTag = document.getElementById('team-tag').value;
+
+            try {
+                // 1. Create the team document
+                const teamRef = await addDoc(collection(db, "teams"), {
+                    name: teamName,
+                    tag: teamTag.toUpperCase(),
+                    owner: user.uid,
+                    members: [user.uid] // The creator is the first member
+                });
+
+                // 2. Update the user's profile with the new teamId
+                const userDocRef = doc(db, "drivers", user.uid);
+                await updateDoc(userDocRef, { teamId: teamRef.id });
+
+                alertMessage('Club created successfully!', 'success');
+                await loadTeamData(teamRef.id); // Load the new team data into the UI
+                toggleModal('create-team-modal', false);
+            } catch (error) {
+                console.error("Error creating team:", error);
+                alertMessage('Failed to create club.', 'error');
+            }
+        });
+
+        // Leave Team Logic
+        document.getElementById('leave-team-button').addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user || !hasTeam) return;
+            
+            const teamData = await getTeamData();
+            const isOwner = user.uid === teamData.owner;
+
+            // If owner tries to leave a team with other members
+            if (isOwner && teamData.members.length > 1) {
+                toggleModal('owner-leave-warning-modal', true);
+                return;
+            }
+
+            // If a regular member leaves, or the owner is the last one left
+            const confirmMessage = isOwner ? "You are the last member. Leaving will disband the club. Continue?" : "Are you sure you want to leave this club?";
+            if (confirm(confirmMessage)) {
+                try {
+                    const teamId = teamData.id;
+                    // If owner is last member, disband. Otherwise, just leave.
+                    if (isOwner) {
+                        await deleteDoc(doc(db, "teams", teamId));
+                    } else {
+                        await updateDoc(doc(db, "teams", teamId), { members: arrayRemove(user.uid) });
+                    }
+                    await updateDoc(doc(db, "drivers", user.uid), { teamId: null });
+
+                    alertMessage(isOwner ? "Club disbanded." : "You have left the club.", "info");
+                } catch (error) {
+                    console.error("Error leaving team:", error);
+                    alertMessage("Failed to leave the club.", "error");
+                }
+            }
+        });
+
+        // Disband Team Logic
+        disbandTeamButton.addEventListener('click', () => {
+            // Just open the confirmation modal
+            toggleModal('disband-confirm-modal', true);
+        });
+
+        disbandConfirmYes.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            
+            try {
+                const teamData = await getTeamData();
+                const teamId = teamData.id;
+
+                // Set teamId to null for all members
+                const memberUpdates = teamData.members.map(member => 
+                    updateDoc(doc(db, "drivers", member.uid), { teamId: null })
+                );
+                await Promise.all(memberUpdates);
+
+                // Delete the team document itself
+                await deleteDoc(doc(db, "teams", teamId));
+
+                alertMessage("Club successfully disbanded.", "info");
+                toggleModal('disband-confirm-modal', false);
+            } catch (error) { 
+                console.error("Error disbanding team:", error); 
+                alertMessage("Failed to disband the club.", "error"); 
+                toggleModal('disband-confirm-modal', false);
+            }
+        });
+
+        profileLogoutButton.addEventListener('click', handleLogout);
+        logoutButton.addEventListener('click', handleLogout);
+
+        // Login Form Submission Handler (Now a real login check)
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            if (!email || !password) {
+                loginMessage.textContent = 'Email and password are required.';
+                return;
+            }
+
+            try {
+                // Set persistence for the session
+                // This is handled by Firebase automatically based on context (browser vs. mobile)
+                // but we can be explicit if needed. For "Remember Me", we handle it manually.
+
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Login is successful, onAuthStateChanged will handle the rest, including verification checks.
+                // If login is successful and email is verified
+                if (rememberMe) {
+                    localStorage.setItem('lem_remembered_email', email);
+                } else { localStorage.removeItem('lem_remembered_email'); }
+            } catch (error) {
+                console.error("Firebase Login Error:", error.code, error.message);
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+                    loginMessage.textContent = 'Email or password incorrect. Please try again.';
+                } else {
+                    loginMessage.textContent = 'An error occurred during login.';
+                }
+            }
+        });
+
+        let driverProfileListener = null; // To hold the unsubscribe function for the driver profile
+        // This function is called by onAuthStateChanged after a successful login/signup
+        async function handleLoginSuccess(user) {
+            isLoggedIn = true;
+
+            // Listen for incoming invitations as soon as the user is logged in
+            listenForInvites(user.uid);
+            
+            // Unsubscribe from any previous listener to prevent memory leaks
+            if (driverProfileListener) {
+                driverProfileListener();
+            }
+
+            // Set up a real-time listener for the user's own profile document
+            const driverDocRef = doc(db, "drivers", user.uid);
+            driverProfileListener = onSnapshot(driverDocRef, (driverDoc) => {
+                // This check is crucial for new signups. If the doc doesn't exist yet,
+                // we just wait for the signup function to create it. The listener will fire again.
+                if (!driverDoc.exists()) {
+                    console.log("Waiting for driver document creation...");
+                    return; 
+                }
+
+                const driverData = driverDoc.data();
+                currentDriverName = driverData.name;
+                currentDriverId = driverData.driverId;
+
+                // NEW: Handle email verification status in real-time
+                const wasVerified = user.emailVerified;
+                user.reload().then(() => handleVerificationStatus(user, wasVerified));
+
+                // React to team status changes in real-time
+                const userJustJoined = driverData.teamId && !hasTeam;
+                const userJustLeft = !driverData.teamId && hasTeam;
+
+                if (userJustJoined) { // User just joined a team
+                    loadTeamData(driverData.teamId);
+                } else if (userJustLeft) { // User just left a team
+                    hasTeam = false;
+                    noTeamView.classList.remove('hidden');
+                    teamView.classList.add('hidden');
+                }
+                // NOW that we have the data, update the UI
+                updateUIVisibility();
+                currentDriverDisplay.textContent = `Welcome, ${currentDriverName}`;
+            }, (error) => {
+                console.error("Error in driver profile listener:", error);
+            });
+
+            toggleModal('login-modal', false);
+            toggleModal('signup-modal', false);
+            // The alert can happen immediately, but the name will be updated by the listener.
+            alertMessage(`Login successful! Loading dashboard...`, 'success');
+        }
+
+        async function getTeamData() {
+            if (!auth.currentUser) return null;
+            const userDoc = await getDoc(doc(db, "drivers", auth.currentUser.uid));
+            if (!userDoc.exists() || !userDoc.data().teamId) return null;
+
+            const teamId = userDoc.data().teamId;
+            const teamDoc = await getDoc(doc(db, "teams", teamId));
+            if (!teamDoc.exists()) return null;
+
+            const teamData = { id: teamDoc.id, ...teamDoc.data() };
+            const membersQuery = query(collection(db, "drivers"), where(documentId(), "in", teamData.members));
+            const membersSnapshot = await getDocs(membersQuery);
+            teamData.members = membersSnapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+            return teamData;
+        }
+
+        async function loadTeamData(teamId) {
+            const teamDocRef = doc(db, "teams", teamId);
+            const teamDoc = await getDoc(teamDocRef);
+
+            if (!teamDoc.exists()) {
+                console.error("Team data not found for user.");
+                hasTeam = false;
+                return;
+            }
+
+            hasTeam = true;
+            const teamData = teamDoc.data();
+
+            // Update Team Hub UI
+            noTeamView.classList.add('hidden'); // This should be 'no-team-view'
+            teamView.classList.remove('hidden');
+            document.getElementById('team-hub-name').innerHTML = `${teamData.name} <span class="text-neon-cyan">[${teamData.tag}]</span>`;
+
+            // Show/hide owner controls
+            if (auth.currentUser.uid === teamData.owner) {
+                document.getElementById('owner-controls').classList.remove('hidden');
+                document.getElementById('disband-team-button').classList.remove('hidden');
+                // Owner can always see the leave button now, but it has special logic
+                document.getElementById('leave-team-button').classList.remove('hidden');
+
+            } else {
+                document.getElementById('owner-controls').classList.add('hidden');
+                document.getElementById('disband-team-button').classList.add('hidden');
+                document.getElementById('leave-team-button').classList.remove('hidden');
+            }
+
+            // Fetch member profiles
+            const rosterList = document.getElementById('team-roster-list');
+            rosterList.innerHTML = ''; // Clear previous list
+
+            if (teamData.members && teamData.members.length > 0) {
+                const membersQuery = query(collection(db, "drivers"), where(documentId(), "in", teamData.members));
+                const membersSnapshot = await getDocs(membersQuery);
+
+                membersSnapshot.forEach(memberDoc => {
+                    const memberData = memberDoc.data();
+                    const isOwner = memberDoc.id === teamData.owner;
+                    const rosterItem = document.createElement('div');
+                    rosterItem.className = 'flex justify-between items-center p-2 bg-gray-100 rounded';
+                    rosterItem.innerHTML = `
+                        <div>
+                            <p class="font-bold text-text-dark">${memberData.name}</p>
+                            <p class="text-xs text-text-dark/60">${memberData.driverId}</p>
+                        </div>
+                        <div>
+                            ${isOwner ? '<span class="text-xs text-fia-red font-normal mr-4">(Owner)</span>' : ''}
+                            ${auth.currentUser.uid === teamData.owner && !isOwner ? `<button class="kick-member-btn text-xs bg-fia-red text-white py-1 px-2 rounded hover:bg-red-700" data-member-uid="${memberDoc.id}">Kick</button>` : ''}
+                            <span class="inline-block w-20 text-center px-2 py-0.5 text-xs font-black rounded-md bg-license-bronze text-white">BRONZE</span>
+                        </div>
+                    `;
+                    rosterList.appendChild(rosterItem);
+                });
+            }
+        }
+
+        // NEW: Function to handle verification messages in the inbox
+        function handleVerificationStatus(user, wasAlreadyVerified) {
+            const messageDropdownContent = document.getElementById('message-dropdown');
+            const existingVerificationMessage = document.getElementById('verification-message');
+            
+            // If a verification message already exists, remove it before adding a new one.
+            if (existingVerificationMessage) {
+                existingVerificationMessage.remove();
+            }
+
+            if (!user.emailVerified) {
+                notificationDot.classList.remove('hidden');
+                const verificationElement = document.createElement('div');
+                verificationElement.id = 'verification-message';
+                verificationElement.className = 'p-2 bg-yellow-500/20 rounded-md border border-yellow-500/50';
+                verificationElement.innerHTML = `
+                    <p class="text-sm text-yellow-300">
+                        <span class="font-bold">Action Required:</span> Please check your inbox to verify your email.
+                    </p>
+                    <button id="resend-verification-btn" class="w-full mt-2 bg-neon-cyan text-dark-primary text-xs font-bold py-1 rounded hover:bg-neon-cyan/80">Resend Email</button>
+                `;
+                messageDropdownContent.prepend(verificationElement); // Add to the top
+            } else if (user.emailVerified && !wasAlreadyVerified) {
+                // This runs only once when the user becomes verified
+                notificationDot.classList.remove('hidden');
+                const verificationCompleteElement = document.createElement('div');
+                verificationCompleteElement.id = 'verification-message';
+                verificationCompleteElement.className = 'p-2 bg-green-500/20 rounded-md border border-green-500/50';
+                verificationCompleteElement.innerHTML = `
+                    <p class="text-sm font-bold text-green-400">Verification Complete. Welcome!</p>
+                `;
+                messageDropdownContent.prepend(verificationCompleteElement);
+            }
+        }
+
+        let invitesListener = null; // To hold the unsubscribe function
+        function listenForInvites(userId) {
+            // Unsubscribe from any previous listener
+            if (invitesListener) {
+                invitesListener();
+            }
+
+            const invitesQuery = query(collection(db, "invitations"), where("to", "==", userId));
+            invitesListener = onSnapshot(invitesQuery, async (snapshot) => {
+                const messageDropdownContent = document.getElementById('message-dropdown');
+                const placeholder = document.getElementById('team-invite-placeholder');
+                
+                // Clear old invites except for the placeholder
+                messageDropdownContent.querySelectorAll('.invite-item').forEach(el => el.remove());
+                const hasVerificationMessage = !!document.getElementById('verification-message');
+
+                if (snapshot.empty) {
+                    // Only hide the dot if there's also no verification message
+                    if (!hasVerificationMessage) notificationDot.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                } else {
+                    notificationDot.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+
+                    for (const inviteDoc of snapshot.docs) {
+                        const inviteData = inviteDoc.data();
+                        const teamDoc = await getDoc(doc(db, "teams", inviteData.teamId));
+                        if (teamDoc.exists()) {
+                            const teamData = teamDoc.data();
+                            const inviteElement = document.createElement('div');
+                            inviteElement.className = 'invite-item p-2 bg-dark-primary rounded-md';
+                            inviteElement.innerHTML = `
+                                <p class="text-sm text-text-light">Invite from <span class="font-bold text-neon-cyan">${teamData.name}</span></p>
+                                <div class="flex space-x-2 mt-2">
+                                    <button class="accept-invite-btn flex-1 bg-green-500 text-white text-xs font-bold py-1 rounded hover:bg-green-600" data-invite-id="${inviteDoc.id}" data-team-id="${inviteData.teamId}">Accept</button>
+                                    <button class="decline-invite-btn flex-1 bg-fia-red text-white text-xs font-bold py-1 rounded hover:bg-red-700" data-invite-id="${inviteDoc.id}">Decline</button>
+                                </div>
+                            `;
+                            messageDropdownContent.appendChild(inviteElement);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Event delegation for accept/decline buttons
+        document.getElementById('message-dropdown').addEventListener('click', async (e) => {
+            const user = auth.currentUser;
+            if (!user) return;
+            e.stopPropagation(); // Prevent the dropdown from closing immediately
+
+            if (e.target.id === 'resend-verification-btn') {
+                await sendEmailVerification(user);
+                alertMessage('Verification email sent! Please check your inbox.', 'info');
+                return;
+            }
+
+            if (e.target.classList.contains('accept-invite-btn')) {
+                const inviteId = e.target.dataset.inviteId;
+                const teamId = e.target.dataset.teamId;
+                // **CHANGE:** Directly add user to the team and update their profile.
+                await updateDoc(doc(db, "teams", teamId), { members: arrayUnion(user.uid) });
+                await updateDoc(doc(db, "drivers", user.uid), { teamId: teamId });
+                await deleteDoc(doc(db, "invitations", inviteId));
+                alertMessage("Welcome to the club! The dashboard will now update.", "success");
+            } else if (e.target.classList.contains('decline-invite-btn')) {
+                const inviteId = e.target.dataset.inviteId;
+                await deleteDoc(doc(db, "invitations", inviteId));
+            }
+        });
+
+        // Event delegation for kicking members
+        document.getElementById('team-roster-list').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('kick-member-btn')) {
+                const memberUidToKick = e.target.dataset.memberUid;
+                const user = auth.currentUser;
+                if (!user || !hasTeam) return;
+
+                if (confirm("Are you sure you want to kick this member?")) {
+                    const userDoc = await getDoc(doc(db, "drivers", user.uid));
+                    const teamId = userDoc.data().teamId;
+
+                    await updateDoc(doc(db, "teams", teamId), { members: arrayRemove(memberUidToKick) });
+                    await updateDoc(doc(db, "drivers", memberUidToKick), { teamId: null });
+                    await loadTeamData(teamId); // Refresh roster
+                }
+            }
+        });
+
+        // Sign Up Form Submission Handler
+        const signupForm = document.getElementById('signup-form');
+        const signupMessage = document.getElementById('signup-message');
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value.trim();
+            const fullName = document.getElementById('signup-full-name').value.trim();
+            const driverId = document.getElementById('signup-driver-id').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+            const confirmPassword = document.getElementById('signup-confirm-password').value.trim();
+
+            // --- Form Validation ---
+            if (password !== confirmPassword) {
+                signupMessage.textContent = 'Passwords do not match.';
+                return;
+            }
+            if (!email) {
+                signupMessage.textContent = 'Please enter your email address.';
+                return;
+            }
+            if (!fullName) {
+                signupMessage.textContent = 'Please enter your full name.';
+                return;
+            }
+            if (password.length < 6) {
+                signupMessage.textContent = 'Password must be at least 6 characters.';
+                return;
+            }
+
+            try {
+                // 1. Create user in Firebase Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // 2. Update their profile in Firebase Auth (for display name)
+                await updateProfile(user, { displayName: fullName });
+
+                // 3. Create their profile document in Firestore
+                const driverDocRef = doc(db, "drivers", user.uid);
+                await setDoc(driverDocRef, {
+                    driverId: driverId, // Storing as entered, can be uppercased on display
+                    name: fullName,
+                    email: user.email,
+                    createdAt: new Date()
+                });
+
+                // 4. Send verification email
+                await sendEmailVerification(user);
+
+                alertMessage('Account created! Please check your email to verify your account before logging in.', 'success');
+                toggleModal('signup-modal', false);
+                toggleModal('login-modal', true);
+
+            } catch (error) {
+                console.error("Firebase Signup Error:", error.code, error.message);
+                if (error.code === 'auth/email-already-in-use') {
+                    signupMessage.textContent = 'This Driver ID is already registered. Please try logging in.';
+                } else if (error.code === 'auth/invalid-email') {
+                    signupMessage.textContent = 'The Driver ID is not valid. Please check for special characters.';
+                } else {
+                    signupMessage.textContent = 'An error occurred during sign-up.';
+                }
+            }
+        });
+
+        // Invite Driver Form Submission
+        const inviteDriverForm = document.getElementById('invite-driver-form');
+        inviteDriverForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const driverIdToInvite = document.getElementById('invite-driver-id').value.trim().toUpperCase();
+            const user = auth.currentUser;
+
+            if (!user || !hasTeam) {
+                alertMessage('You must be in a club to invite players.', 'error');
+                return;
+            }
+
+            try {
+                // Find the driver to invite by their public Driver ID
+                const q = query(collection(db, "drivers"), where("driverId", "==", driverIdToInvite));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    document.getElementById('invite-driver-message').textContent = 'Driver ID not found.';
+                    return;
+                }
+
+                const invitedDriverDoc = querySnapshot.docs[0];
+                const invitedDriverData = invitedDriverDoc.data();
+
+                // Check if the driver is already in a team
+                if (invitedDriverData.teamId) {
+                    document.getElementById('invite-driver-message').textContent = 'This driver is already in a club.';
+                    return;
+                }
+
+                // Check for an existing invitation
+                const existingInviteQuery = query(collection(db, "invitations"), where("to", "==", invitedDriverDoc.id));
+                const existingInviteSnapshot = await getDocs(existingInviteQuery);
+                if (!existingInviteSnapshot.empty) {
+                    document.getElementById('invite-driver-message').textContent = 'An invitation has already been sent to this driver.';
+                    return;
+                }
+                const currentUserDoc = await getDoc(doc(db, "drivers", user.uid));
+
+                // Create an invitation document
+                await addDoc(collection(db, "invitations"), {
+                    teamId: currentUserDoc.data().teamId,
+                    to: invitedDriverDoc.id, // The UID of the invited driver
+                });
+
+                alertMessage(`Invitation sent to ${driverIdToInvite}!`, 'success');
+                toggleModal('invite-driver-modal', false);
+            } catch (error) {
+                console.error("Error sending invite:", error);
+                alertMessage('Failed to send invitation.', 'error');
+            }
+        });
+
+        // Edit Profile Form Submission
+        const editProfileForm = document.getElementById('edit-profile-form');
+        editProfileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newName = document.getElementById('edit-full-name').value.trim();
+            const user = auth.currentUser;
+
+            if (!newName) {
+                document.getElementById('edit-profile-message').textContent = 'Full Name cannot be empty.';
+                return;
+            }
+
+            if (user) {
+                try {
+                    // Update Firebase Auth and Firestore
+                    await updateProfile(user, { displayName: newName });
+                    const driverDocRef = doc(db, "drivers", user.uid);
+                    await setDoc(driverDocRef, { name: newName }, { merge: true });
+
+                    // Update local state and UI
+                    currentDriverName = newName;
+                    currentDriverDisplay.textContent = `Welcome, ${currentDriverName}`;
+                    alertMessage('Profile updated successfully!', 'success');
+                    toggleModal('edit-profile-modal', false);
+                } catch (error) {
+                    console.error("Profile Update Error:", error);
+                    alertMessage('Failed to update profile.', 'error');
+                }
+            }
+        });
+
+        // Transfer Ownership Form Submission
+        document.getElementById('transfer-ownership-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newOwnerUid = document.getElementById('new-owner-select').value;
+            if (!newOwnerUid) {
+                document.getElementById('transfer-ownership-message').textContent = 'Please select a new owner.';
+                return;
+            }
+            if (confirm("Are you sure? This action cannot be undone.")) {
+                const userDoc = await getDoc(doc(db, "drivers", auth.currentUser.uid));
+                const teamId = userDoc.data().teamId;
+                await updateDoc(doc(db, "teams", teamId), { owner: newOwnerUid });
+                alertMessage("Ownership transferred successfully.", "success");
+                toggleModal('transfer-ownership-modal', false);
+                await loadTeamData(teamId); // Refresh UI
+            }
+        });
+
+        // Forgot Password Form Submission
+        const forgotPasswordForm = document.getElementById('forgot-password-form');
+        const forgotPasswordMessage = document.getElementById('forgot-password-message');
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('reset-email').value.trim();
+            if (!email) {
+                forgotPasswordMessage.textContent = 'Please enter your email address.';
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                forgotPasswordMessage.textContent = '';
+                alertMessage('Password reset email sent! Please check your inbox.', 'success');
+                toggleModal('forgot-password-modal', false);
+            } catch (error) {
+                console.error("Password Reset Error:", error);
+                // Don't reveal if an email exists or not for security
+                forgotPasswordMessage.textContent = 'If a matching account exists, a reset link has been sent.';
+            }
+        });
+
+        // --- REFACTORED MODAL HANDLING ---
+
+        async function populateNewOwnerDropdown() {
+            const select = document.getElementById('new-owner-select');
+            select.innerHTML = '<option value="">Select a member...</option>'; // Reset
+            const teamData = await getTeamData();
+            if (teamData && teamData.members) {
+                teamData.members.forEach(member => {
+                    if (member.uid !== auth.currentUser.uid) { // Exclude self
+                        select.innerHTML += `<option value="${member.uid}">${member.name} (${member.driverId})</option>`;
+                    }
+                });
+            }
+        }
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            if (show) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+
+                // --- Handle special cases for specific modals when they open ---
+                if (modalId === 'login-modal') {
+                    const rememberedEmail = localStorage.getItem('lem_remembered_email');
+                    if (rememberedEmail) {
+                        document.getElementById('login-email').value = rememberedEmail;
+                        document.getElementById('password').value = '';
+                        document.getElementById('remember-me').checked = true;
+                    }
+                } else if (modalId === 'edit-profile-modal') {
+                    document.getElementById('edit-full-name').value = currentDriverName;
+                    document.getElementById('edit-driver-id').value = currentDriverId;
+                } else if (modalId === 'transfer-ownership-modal') {
+                    populateNewOwnerDropdown();
+                }
+
+            } else {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+
+                // --- Handle form resets for specific modals when they close ---
+                const form = modal.querySelector('form');
+                if (form) form.reset();
+                const message = modal.querySelector('[id$="-message"]');
+                if (message) message.textContent = '';
+            }
+        }
+
+        // Single event listener for all modal interactions
+        document.body.addEventListener('click', (e) => {
+            const openTrigger = e.target.closest('[data-modal-open]');
+            const closeTrigger = e.target.closest('[data-modal-close]');
+            const switchTrigger = e.target.closest('[data-modal-switch]');
+            const dropdownTrigger = e.target.closest('[data-modal-open] > [data-modal-target]');
+
+            if (dropdownTrigger) { // Handle profile dropdown links
+                e.preventDefault();
+                profileDropdown.classList.add('hidden');
+                toggleModal(dropdownTrigger.dataset.modalTarget, true);
+            } else if (openTrigger) { // Handle standard open buttons
+                e.preventDefault();
+                toggleModal(openTrigger.dataset.modalOpen, true);
+            } else if (switchTrigger) { // Handle switching between modals
+                e.preventDefault();
+                const activeModal = document.querySelector('.login-modal-overlay.active');
+                if (activeModal) toggleModal(activeModal.id, false);
+                toggleModal(switchTrigger.dataset.modalSwitch, true);
+            } else if (closeTrigger) { // Handle close buttons and overlay clicks
+                // If the click is on the overlay itself, not a child element
+                if (closeTrigger.hasAttribute('data-modal-close') && e.target !== closeTrigger) {
+                    return;
+                }
+                e.preventDefault();
+                const modalToClose = e.target.closest('.login-modal-overlay');
+                if (modalToClose) {
+                    toggleModal(modalToClose.id, false);
+                }
+            }
+        }
+
+        // --- SEARCH IMPLEMENTATION ---
+        function clearSearchHighlights() {
+            const container = document.querySelector('.content-view.active');
+            if (!container) return;
+
+            const marks = container.querySelectorAll('mark.search-highlight');
+            marks.forEach(mark => {
+                const parent = mark.parentNode;
+                parent.replaceChild(document.createTextNode(mark.textContent), mark);
+                parent.normalize(); // Merges adjacent text nodes
+            });
+        }
+
+        function performSearch() {
+            clearSearchHighlights();
+            const query = headerSearchInput.value.trim();
+            if (query.length < 2) return; // Don't search for very short strings
+
+            const container = document.querySelector('.content-view.active');
+            if (!container) return;
+
+            const regex = new RegExp(query, 'gi');
+            const selectors = 'p, h1, h2, h3, h4, li, td';
+            const elements = container.querySelectorAll(selectors);
+            let firstMatch = null;
+
+            elements.forEach(element => {
+                // Avoid searching inside script tags or elements we don't want to modify
+                if (element.closest('script, style, .dashboard-card, .login-modal-overlay')) return;
+
+                const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+                let node;
+                const nodesToReplace = [];
+
+                while (node = walker.nextNode()) {
+                    if (node.textContent.match(regex)) {
+                        const newNode = document.createElement('span');
+                        newNode.innerHTML = node.textContent.replace(regex, match => `<mark class="search-highlight bg-yellow-300 px-1 rounded">${match}</mark>`);
+                        nodesToReplace.push({ old: node, new: newNode });
+                        if (!firstMatch) firstMatch = newNode;
+                    }
+                }
+
+                nodesToReplace.forEach(replacement => {
+                    replacement.old.parentNode.replaceChild(replacement.new, replacement.old);
+                });
+            });
+
+            if (firstMatch) {
+                firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                alertMessage(`No results found for "${query}"`, 'info');
+            }
+        }
+
+        headerSearchButton.addEventListener('click', performSearch);
+        headerSearchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            } else if (headerSearchInput.value.trim() === '') {
+                clearSearchHighlights();
+            }
+        });
+
+        // Custom Alert/Message Box
+        function alertMessage(message, type = 'info') {
+            const messageBox = document.createElement('div');
+            messageBox.textContent = message;
+            // Use z-index higher than modal
+            messageBox.className = 'fixed top-5 right-5 z-[100] p-4 rounded-lg shadow-xl text-white font-bold transition duration-500 ease-in-out transform scale-100 opacity-100';
+
+            if (type === 'success') {
+                messageBox.classList.add('bg-neon-cyan', 'text-dark-primary');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-fia-red', 'text-white');
+            } else {
+                 messageBox.classList.add('bg-dark-card', 'text-text-light');
+            }
+
+            document.body.appendChild(messageBox);
+
+            setTimeout(() => {
+                messageBox.style.opacity = '0';
+                messageBox.style.transform = 'scale(0.9)';
+                setTimeout(() => messageBox.remove(), 500);
+            }, 3000);
+        }
+
+        // Initial setup
+        window.onload = () => {
+            switchView('public-homepage');
+            // Dashboard data is no longer loaded on page load, only after a successful login.
+        }
+
+    </script>
+</body>
+</html>
